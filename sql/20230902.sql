@@ -52,8 +52,10 @@ order by store_cd desc
 limit 5;
 
 -- S-030: レシート明細データ（receipt）に対し、店舗コード（store_cd）ごとに売上金額（amount）の分散を計算し、降順で5件表示せよ。
-select store_cd, VARIANCE() WITHIN GROUP(ORDER BY product_cd) as var
+select store_cd, variance(amount) as var
 from receipt
 group by store_cd
 order by store_cd desc
 limit 5;
+
+-- https://www.postgresql.jp/document/7.4/html/functions-aggregate.html
