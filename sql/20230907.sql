@@ -79,3 +79,58 @@ a.customer_id, a.sum_amount,
 from percentail_table p, amount_table a
 limit 10;
 
+-- S-056: 顧客データ（customer）の年齢（age）をもとに10歳刻みで年代を算出し、顧客ID（customer_id）、生年月日（birth_day）とともに10件表示せよ。
+-- ただし、60歳以上は全て60歳代とすること。年代を表すカテゴリ名は任意とする。
+select customer_id, birth_day, 
+  (case 
+  when age < 10 then 0
+  when 10 <= age and age < 20 then 10
+  when 20 <= age and age < 30 then 20
+  when 30 <= age and age < 40 then 30
+  when 40 <= age and age < 50 then 40
+  when 50 <= age and age < 60 then 50
+  when 60 <= age then 60 end) as era
+from customer
+limit 10;
+
+-- S-057: 056の抽出結果と性別コード（gender_cd）により、新たに性別×年代の組み合わせを表すカテゴリデータを作成し、10件表示せよ
+-- 組み合わせを表すカテゴリの値は任意とする。
+select customer_id, birth_day, 
+  gender_cd || (case 
+  when age < 10 then 0
+  when 10 <= age and age < 20 then 10
+  when 20 <= age and age < 30 then 20
+  when 30 <= age and age < 40 then 30
+  when 40 <= age and age < 50 then 40
+  when 50 <= age and age < 60 then 50
+  when 60 <= age then 60 end) as gender_era
+from customer
+limit 10;
+
+-- S-058: 顧客データ（customer）の性別コード（gender_cd）をダミー変数化し、顧客ID（customer_id）とともに10件表示せよ。
+select customer_id,
+(case when gender_cd = '0' then 1 else 0 end) as gender_cd_0,
+(case when gender_cd = '1' then 1 else 0 end) as gender_cd_1,
+(case when gender_cd = '9' then 1 else 0 end) as gender_cd_9
+from customer
+limit 10;
+
+-- S-059: レシート明細データ（receipt）の売上金額（amount）を顧客ID（customer_id）ごとに合計し、売上金額合計を平均0、標準偏差1に標準化して顧客ID、売上金額合計とともに10件表示せよ。
+-- 標準化に使用する標準偏差は、分散の平方根、もしくは不偏分散の平方根のどちらでも良いものとする。ただし、顧客IDが"Z"から始まるのものは非会員を表すため、除外して計算すること。
+with amount_table as(
+  select customer_id, sum(amount) as sum_amount
+  from receipt
+  where customer_id not like 'Z%'
+  group by customer_id
+),
+stats_table as (
+  select 
+  avg(sum_amount) as avg_sales,
+  stddev_pop(sum_amount) as std_sales
+  from amount_table
+)
+select customer_id, sum_amount, (sum_amount - avg_sales) / std_sales as std_sales
+from amount_table
+cross join stats_table
+limit 10; 
+
